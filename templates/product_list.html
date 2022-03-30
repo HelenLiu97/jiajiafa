@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/static/css/x-admin.css" media="all">
+    <link rel="stylesheet" href="/static/layui/css/layui.css" media="all">
+</head>
+<body>
+
+<input id="order_id" value="{{ order_id }}" style="display: none">
+
+<div class="x-body">
+
+    <table class="layui-hide" id="product_list" lay-filter="product_list"></table>
+
+</div>
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+<script src="/static/layui/layui.all.js" charset="utf-8"></script>
+<script>
+
+    var table = layui.table,
+        $ = layui.jquery,
+        util = layui.util,
+        layer = layui.layer;
+
+    table.render({
+        elem: '#product_list'
+        , height: 'full-60'
+        , cellMinWidth: '80'
+        , url: '/product_list/?order_id=' + $("#order_id").val()//数据接口
+        , title: '下单产品列表信息'
+        , limit:20
+        , toolbar: "true" //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+        , totalRow: true //开启合计行
+        , cols: [[ //表头
+            {type:'numbers'}
+            , {field: 'product_name', title: '品名', align: 'center',totalRowText: '合计：',edit: 'text'}
+            , {field: 'position', title: '方位', align: 'center',edit: 'text'}
+            , {field: 'model', title: '产品型号', align: 'center',edit: 'text'}
+            , {field: 'color', title: '颜色', align: 'center',edit: 'text'}
+            , {field: 'size', title: '规格尺寸', align: 'center',edit: 'text'}
+            , {field: 'quantity', title: '数量', align: 'center',style:'color: blue',sort: true,edit: 'text'}
+            , {field: 'price', title: '单价(元)', align: 'center', style:'color: red',sort: true,edit: 'text'}
+            , {field: 'total_price', title: '总价', align: 'center', style:'color: #000000',sort: true, totalRow:true}
+            , {field: 'now_time', title: '下单时间', align: 'center' }
+            , {field: 'status', title: '状态', align: 'center',edit: 'text'}
+            , {fixed: 'right', width: 60, align: 'center', toolbar: '#barDemo'}
+        ]]
+        , id: 'top_history'
+        , page: true
+    });
+
+    table.on('tool(product_list)', function (obj) { //注：tool 是工具条事件名，test_all 是 table 原始容器的属性 lay-filter="对应的值"
+        var data = obj.data //获得当前行数据
+            , layEvent = obj.event; //获得 lay-event 对应的值
+        if (layEvent === 'del') {
+            layer.confirm('确定删除品名为:'+data.product_name+'的订单信息吗?', {title:'删除订单信息提示!!!', icon:'&#xe640;'}, function (index) {
+                //删除对应行（tr）的DOM结构
+                layer.close(index);
+                //向服务端发送删除指令
+                $.ajax({
+                    type : 'get',
+                    url : '/del_product/?data_id=' + data.data_id,
+                    dataType : 'json',
+                    beforeSend:function () {
+                        layer.load(2, {shade: false})
+                    },
+                    success : function(data) {
+                        // 成功提示框
+                        if (data.code == 0){
+                            layer.closeAll();
+                            layer.msg(data.msg, {
+                                icon : 6,
+                            }, function () {
+                                obj.del();
+                            });
+                        }else if(data.code == 502){
+                            layer.closeAll();
+                            layer.msg(data.msg, {
+                                icon : 5
+                            });
+                        }
+
+                    },
+                    error : function(data) {
+                        layer.closeAll();
+                        // 异常提示
+                        layer.msg(data.msg, {
+                            icon : 5
+                        });
+                    }
+                });
+                return false
+            });
+        }
+    })
+
+    //监听单元格编辑
+    table.on('edit(product_list)', function(obj){
+        var value = obj.value //得到修改后的值
+            ,data = obj.data //得到所在行所有键值
+            ,field = obj.field //得到字段
+            ,tr = obj.tr;
+
+        // 获取修改前的值，如果修改失败则回调
+        var oldtext = $(tr).find("td[data-field='"+obj.field+"'] div").text();
+
+        $.ajax({
+            type : 'POST',
+            url : '/chang_product/',
+            data : {data_id:data.data_id,
+                    field:field,
+                    value:util.escape(value)
+            },
+            dataType : 'json',
+            beforeSend:function () {
+                layer.load(2, {shade: false})
+            },
+            success : function(data) {
+                // 成功提示框
+                if (data.code == 0){
+                    layer.closeAll();
+                    layer.msg(data.msg, {
+                        icon : 1,
+                    });
+
+                }else if(data.code == 502){
+                    layer.closeAll();
+                    layer.msg(data.msg, {
+                        icon : 2
+                    });
+                    $(tr).find("td[data-field='"+obj.field+"'] input").val(oldtext);
+                }
+
+            }
+        });
+
+        {#layer.msg('[ID: '+ data.data_id +'] ' + field + ' 字段更改值为：'+ util.escape(value));#}
+    });
+
+</script>
+</body>
+</html>

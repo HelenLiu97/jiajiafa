@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>家家發发货单</title>
+    <script language="javascript" src="/static/js/jquery-1.4.4.min.js"></script>
+    <script language="javascript" src="/static/js/jquery.jqprint-0.3.js"></script>
+    <link rel="stylesheet" href="/static/layui/css/layui.css" media="all">
+</head>
+<style>
+    p{
+        font-size: 25px;
+    }
+</style>
+<body>
+<button type="button" class="layui-btn layui-btn-lg layui-btn-normal" onclick="printer()" style="float: right;">&nbsp;&nbsp;打印&nbsp;&nbsp;</button>
+<div id="info" class="table_frame">
+
+    <h1 style="text-align:center">
+        湖口家家發门业有限公司
+    </h1>
+    <h3 style="text-align:center;">销售发货单</h3>
+
+    <table style="border-collapse:collapse;width:100%;" border="2px black solid" >
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="5" style="padding-left: 1%;">客户名称: {{ user_name }}</td> <!--  合并行-->
+            <td colspan="4" style="padding-left: 1%;">联系电话: {{ phone }}</td>
+        </tr>
+
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="4" style="padding-left: 1%;">制单日期: {{ now_time }}</td> <!--  合并行-->
+            <td colspan="2" style="padding-left: 1%;">业务员: 公司</td>
+            <td colspan="3" style="padding-left: 1%;">打印人: 张慧慧</td>
+        </tr>
+
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="9" style="padding-left: 1%;">送货地址: {{ address }}</td>
+        </tr>
+
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="1" style="padding-left: 1%;">序号</td>
+            <td colspan="1" style="padding-left: 1%;">品名</td>
+            <td colspan="1" style="padding-left: 1%;">方位</td>
+            <td colspan="1" style="padding-left: 1%;">产品型号</td>
+            <td colspan="1" style="padding-left: 1%;">颜色</td>
+            <td colspan="1" style="padding-left: 1%;">规格尺寸(高*宽*厚)</td>
+            <td colspan="1" style="padding-left: 1%;">数量</td>
+            <td colspan="1" style="padding-left: 1%;">单价(￥)</td>
+            <td colspan="1" style="padding-left: 1%;">小合计(￥)</td>
+        </tr>
+
+        {% for product in product_info %}
+            <tr style="height: 50px;font-size: 20px;">
+                <td colspan="1" style="padding-left: 1%;">{{ product.index }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.product_name }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.position }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.model }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.color }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.size }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.quantity }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.price }}</td>
+                <td colspan="1" style="padding-left: 1%;">{{ product.total }}</td>
+            </tr>
+        {% endfor %}
+
+        <!--
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="1" style="padding-left: 1%;">1</td>
+            <td colspan="1" style="padding-left: 1%;">内右</td>
+            <td colspan="1" style="padding-left: 1%;">断桥</td>
+            <td colspan="1" style="padding-left: 1%;">红色</td>
+            <td colspan="1" style="padding-left: 1%;">3000*7000*1450</td>
+            <td colspan="1" style="padding-left: 1%;">3</td>
+            <td colspan="1" style="padding-left: 1%;">499</td>
+        </tr>
+        -->
+
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="8" style="padding-left: 1%;border-right:1px solid white;">大合计:</td>
+            <td colspan="1" style="padding-left: 1%;">{{ total }}</td>
+        </tr>
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="9" style="padding-left: 1%;">备注:</td>
+        </tr>
+        <tr style="height: 50px;font-size: 20px;">
+            <td colspan="4" style="padding-left: 1%;">总金额: {{ total }} 元</td>
+            <td colspan="5" style="padding-left: 1%;">大写金额: {{ total_zh }}</td>
+        </tr>
+
+    </table>
+
+    <div>
+        <p style="padding-left: 80%">客户签字:</p>
+        <p>备注:</p>
+        <p style="padding-left: 2%">1.本发货单请顶货人核对无误后签字，如发生错误，由订货方承担一切责任。</p>
+        <p style="padding-left: 2%">2.取货时请订货方出厂前清点数量，出本厂后，如发生缺少数量与本厂无关。</p>
+        <p>地址: 江西省九江市湖口县桃源新苑家家发门业 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 联系电话: 15979909010  或 18879292635</p>
+    </div>
+
+</div>
+
+<script language="javascript">
+    function  printer(){
+        $("#info").jqprint();
+    }
+
+    $(document).ready(function() {
+        printer()
+    })
+
+</script>
+
+
+

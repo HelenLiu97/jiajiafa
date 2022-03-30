@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>家家發订单管理</title>
+    <link rel="stylesheet" href="/static/css/x-admin.css" media="all">
+    <link rel="icon" href="/static/image/user_com.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="/static/layui/css/layui.css" media="all">
+</head>
+<body>
+<ul class="layui-nav" lay-bar="disabled">
+    <li class="layui-nav-item" lay-unselect="">
+        <a href="javascript:"><img src="/static/image/user.png" class="layui-nav-img"><span>{{ user_name }}</span></a>
+        <dl class="layui-nav-child">
+            <dd style="text-align: center;"><a onclick="change_pass()">更换密码</a></dd>
+            <dd style="text-align: center;"><a href="/logout/">退出</a></dd>
+        </dl>
+    </li>
+</ul>
+
+<div class="x-body">
+
+
+    <form class="layui-form x-center" action="" lay-filter="example">
+        <div class="demoTable">
+            客户：
+            <div class="layui-inline">
+                <input class="layui-input" name="user_name" id="user_name" autocomplete="off">
+            </div>
+            电话:
+            <div class="layui-inline">
+                <input type="number"  class="layui-input" name="phone" id="phone"  autocomplete="off">
+            </div>
+            地址:
+            <div class="layui-inline">
+                <input class="layui-input" name="address" id="address" autocomplete="off">
+            </div>
+            状态:
+            <div class="layui-inline">
+                <select name="interest" lay-filter="aihao" id="order_status">
+                    <option value="" selected=""></option>
+                    <option value="已下单">已下单</option>
+                    <option value="已发货">已发货</option>
+                    <option value="已到货">已到货</option>
+                    <option value="安装中">安装中</option>
+                    <option value="安装完成">安装完成</option>
+                    <option value="已完结">已完结</option>
+                </select>
+            </div>
+
+            <button class="layui-btn search_btn layui-btn-normal" type="button"><i class="layui-icon layui-icon-search"></i></button>
+
+            <div class="layui-btn-group" style="float: right">
+                <button type="button" class="layui-btn layui-btn" id="add_order"><i class="layui-icon"></i></button>
+            </div>
+        </div>
+
+    </form>
+
+
+    <table class="layui-table" id="card_info" lay-filter="card_info"></table>
+
+    <script type="text/html" id="copy">
+        <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="copy" title="复制卡号"><i class="layui-icon">&#xe655;</i></a>
+    </script>
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-xs " lay-event="place_order" style="background-color: #FFD700">下单</a>
+        <a class="layui-btn layui-btn-xs" lay-event="detail" style="background-color: #0a3d71">详情</a>
+        <a class="layui-btn layui-btn-xs" lay-event="update_status" style="background-color: #8B8878">标记</a>
+        <a class="layui-btn layui-btn-xs" lay-event="pay" style="background-color: #8B4500">收款</a>
+        <a class="layui-btn layui-btn-xs" lay-event="receipt" style="background-color: #4682B4">发货单</a>
+        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="history" style="background-color: #d66666">历史</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+</div>
+<script src="/static/layui/layui.all.js" charset="utf-8"></script>
+<script>
+    var table = layui.table,
+        $ = layui.jquery,
+        form = layui.form,
+        layer = layui.layer;
+
+
+    table.render({
+        elem: '#card_info'
+        , height: 'full-170'
+        , cellMinWidth: '80'
+        , url: '/order_list/' //数据接口
+        , title: '订单列表信息'
+        , skin: 'line'
+        , limit: 20
+        , limits:[20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
+        , toolbar: '#search_remain' //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+        , totalRow: true //开启合计行
+        , cols: [[ //表头
+            {type:'numbers'}
+            , {field: 'user_name', title: '客户', width: 100,align: 'center',  style:"mso-number-format:'\@';",}
+            , {field: '', toolbar:"#copy", width:50}
+            , {field: 'phone', title: '电话', align: 'center',width: 120}
+            , {field: 'address', title: '地址', align: 'center', width: 400}
+            , {field: 'start_time', title: '创建时间', align: 'center',}
+            , {field: 'end_time', title: '结单时间', align: 'center',}
+            , {field: 'status', title: '状态', align: 'center',}
+            , {field: 'pay', title: '已支付', align: 'center',style:'color: #9932CC',totalRow:true}
+            , {field: 'total_price', title: '总价', align: 'center', style:'color: #8B4500',totalRow:true}
+            , {fixed: 'right', width: 380, align: 'center', toolbar: '#barDemo'}
+        ]]
+        , id: 'card_info'
+        , page: true
+        , done: function (res, curr, count) {
+
+            for (var i = 0; i < res.data.length; i++) {
+                if (res.data[i].status == '安装完成') {
+                    $('table tbody tr').eq(i).css('background-color', '#FA8072')
+                }else if(res.data[i].status == '已完结'){
+                    $('table tbody tr').eq(i).css('background-color', '#00FF00')
+                }
+            }
+        }
+    });
+
+    /*根据搜索条件重载表格*/
+    $(".search_btn").on("click",function(){
+        reload_table(1)
+    })
+
+    function reload_table(page){
+        var user_name = $('#user_name').val(),
+            phone = $('#phone').val(),
+            address = $('#address').val(),
+            order_status = $('#order_status').val();
+            //page = $(".layui-laypage-em").next().html(); 当前页码值
+        table.reload('card_info', {
+            page: {
+                curr: page //重新从第 1 页开始
+            },where: {
+                user_name: user_name,
+                phone: phone,
+                address:address,
+                _status: order_status
+            }
+        }, '/order_list/');
+        return false
+    }
+
+    var add_order = document.getElementById('add_order');
+    add_order.onclick = function (){
+        layui.layer.open({
+            title: '添加新的订单',
+            type: 2,
+            anim: 3,
+            skin: 'layui-layer-lan',
+            area: ['25%', '35%'],//宽高
+            shadeClose: true, //点击遮罩关闭
+            content: '/add_order/',
+            end:function () {
+                reload_table(1)
+            }
+        });
+    }
+
+
+    table.on('tool(card_info)', function (obj) { //注：tool 是工具条事件名，test_all 是 table 原始容器的属性 lay-filter="对应的值"
+        var data = obj.data //获得当前行数据
+            , layEvent = obj.event, //获得 lay-event 对应的值
+             page = $(".layui-laypage-em").next().html();
+
+        if (layEvent === 'update_status') {
+            layer.open({
+                title: '更改订单状态'
+                , btn: ['确定']
+                , content: '<div>' +
+                    '<div>' +
+                        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<select name="interest" id="status"  style="width:80%;height: 30px">' +
+                            '<option value="已下单" selected="">已下单</option>' +
+                            '<option value="已发货">已发货</option>' +
+                            '<option value="已到货">已到货</option>' +
+                            '<option value="安装中">安装中</option>' +
+                            '<option value="安装完成">安装完成</option>' +
+                        '</select>' +
+                    '</div>' +
+                '</div>'
+                ,
+                yes: function (index,layero) {
+                    var status = $('#status').val();
+                    $.ajax({
+                        type : 'get',
+                        url : '/order_status/?data_id=' + data.data_id + "&status=" + status,
+                        dataType : 'json',
+                        beforeSend:function () {
+                            layer.load(2, {shade: false})
+                        },
+                        success : function(data) {
+                            var page = $(".layui-laypage-em").next().html();
+                            // 成功提示框
+                            if (data.code == 0){
+                                layer.closeAll();
+                                layer.msg(data.msg, {
+                                    icon : 6,
+                                });
+                                reload_table(page)
+                            }else if(data.code == 502){
+                                layer.closeAll();
+                                layer.msg(data.msg, {
+                                    icon : 5
+                                });
+                            }
+
+                        },
+                        error : function(data) {
+                            layer.closeAll();
+                            // 异常提示
+                            layer.msg(data.msg, {
+                                icon : 5
+                            });
+                        }
+                    });
+
+                }})
+        } else if (layEvent === 'detail'){
+            layui.layer.open({
+                title: '客户为 [ ' + data.user_name + ' ] 的订单信息',
+                type: 2,
+                anim: 3,
+                area: ['95%', '70%'],//宽高
+                shadeClose: true, //点击遮罩关闭
+                content: '/order_detail/?order_id='+data.data_id,
+                end: function (){
+                    reload_table(page)
+                }
+            });
+            return false
+        }else if (layEvent === 'del') {
+            layer.confirm('确定删除客户为:'+data.user_name+'的订单信息吗？', {title:'订单删除提示!!!', icon:'&#xe640;'}, function (index) {
+                //删除对应行（tr）的DOM结构
+                layer.close(index);
+                //向服务端发送删除指令
+                $.ajax({
+                    type : 'GET',
+                    url : '/del_order/?data_id=' + data.data_id,
+                    dataType : 'json',
+                    beforeSend:function () {
+                        layer.load(2, {shade: false})
+                    },
+                    success : function(data) {
+                        // 成功提示框
+                        if (data.code == 0){
+                            layer.closeAll();
+                            layer.msg(data.msg, {
+                                icon : 6,
+                            }, function () {
+                                obj.del();
+                            });
+                        }else if(data.code == 502){
+                            layer.closeAll();
+                            layer.msg(data.msg, {
+                                icon : 5
+                            });
+                        }
+
+                    },
+                    error : function(data) {
+                        layer.closeAll();
+                        // 异常提示
+                        layer.msg(data.msg, {
+                            icon : 5
+                        });
+                    }
+                });
+                return false
+            });
+        }else if (layEvent === 'place_order') {
+            layui.layer.open({
+                title: '为 [ ' + data.user_name + ' ] 创建下单信息',
+                type: 2,
+                anim: 3,
+                area: ['98%', '50%'],//宽高
+                shadeClose: true, //点击遮罩关闭
+                content: '/add_product/?order_id=' + data.data_id,
+                end: function (){
+                    reload_table(page)
+                }
+            });
+            return false
+        } else if (layEvent === "pay"){
+            layer.prompt({title: '输出已收款信息'}, function(num, index){
+
+                if (isNaN(num)){
+                    layer.msg('请输入金额数字!')
+                }else{
+                    $.ajax({
+                        type : 'POST',
+                        url : '/update_pay/',
+                        data : {pay_num:num,
+                                data_id:data.data_id
+                        },
+                        dataType : 'json',
+                        beforeSend:function () {
+                            layer.load(2, {shade: false})
+                        },
+                        success : function(data) {
+                            // 成功提示框
+                            if (data.code == 0){
+                                layer.closeAll();
+                                layer.msg(data.msg, {
+                                    icon : 6,
+                                });
+                                reload_table(page)
+                            }else if(data.code == 502){
+                                layer.closeAll();
+                                layer.msg(data.msg, {
+                                    icon : 5
+                                });
+                            }
+
+                        }
+                    });
+                }
+
+            });
+
+        }else if (layEvent === 'copy'){
+            copyText(data.user_name.trim() + '; ' + data.phone.trim() + '; ' + data.address.trim(), function () {
+                layer.msg('复制基本信息成功！')
+            })
+        }else if (layEvent === 'receipt'){
+            layui.layer.open({
+                title: '客户为 [ ' + data.user_name + ' ] 的发货单',
+                type: 2,
+                anim: 1,
+                area: ['90%', '90%'],//宽高
+                shadeClose: true, //点击遮罩关闭
+                content: '/receipt/?data_id=' + data.data_id,
+            });
+            return false
+        }else if (layEvent === 'history'){
+            layui.layer.open({
+                title: '操作客户为 [ ' + data.user_name + ' ] 的订单历史事件',
+                type: 2,
+                anim: 1,
+                area: ['90%', '90%'],//宽高
+                shadeClose: true, //点击遮罩关闭
+                content: '/history/?data_id=' + data.data_id,
+            });
+            return false
+        }
+    });
+
+    function copyText(text, callback){ // text: 要复制的内容， callback: 回调
+        var tag = document.createElement('input');
+        tag.setAttribute('id', 'cp_hgz_input');
+        tag.value = text;
+        document.getElementsByTagName('body')[0].appendChild(tag);
+        document.getElementById('cp_hgz_input').select();
+        document.execCommand('copy');
+        document.getElementById('cp_hgz_input').remove();
+        if(callback) {callback(text)}
+    }
+
+    function change_pass() {
+        layui.layer.open({
+            title: '修改密码',
+            type: 2,
+            anim: 3,
+            area: ['40%', '50%'],//宽高
+            shadeClose: true, //点击遮罩关闭
+            content: '/change_pass/',
+        })
+    }
+
+
+</script>
+</body>
+</html>
